@@ -1,0 +1,35 @@
+install.packages(c('spgwr', 'ggplot2', 'maptools'))
+
+library(spgwr)
+library(ggplot2)
+library(maptools)
+
+# importing the train dataset
+train_df <- read.csv("train.csv")
+attach(train_df)
+
+# head(train_df)
+
+# running multiple regression model
+# used to udnerstand correlation of variables
+model1 <- lm(water_index ~ asset_index+lat+lon+n_asset+adm1dhs+urban)
+summary(model1)
+
+# extracting coordinates
+coordinates = cbind(train_df$lat, train_df$lon)
+head(coords)
+
+# calculate kernel bandwidth
+GWRbandwidth <- gwr.sel(water_index ~ asset_index+adm1dhs+urban+cluster_id, data=train_df, coords=coordinates,adapt=T) 
+
+# run the GWR model
+gwr.model <- gwr.sel(water_index ~ asset_index+adm1dhs+urban+cluster_id, data=train_df, coords=coordinates,adapt=GWRbandwidth, hatmatrix=TRUE, se.fit=TRUE)
+# print the results of the model
+gwr.model
+
+# load the test dataset
+test_df <- read.csv("test_masked.csv")
+
+# Predict the water_index values using the GWR model
+gwr.pred <- predict(gwr.model, newdata = test_df, hatmatrix=TRUE, se.fit=TRUE)
+head(gwr.pred)
